@@ -145,6 +145,9 @@ class FakePrinter:
                 im.paste(receipt, (0, face.height))
             else:
                 im = receipt
+
+            if data.get("rotate_180", False):
+                im = im.transpose(Image.Transpose.ROTATE_180)
             im.save(self._output_path)
             log.info("Saved to receipt.png (%dx%d, face=%s)", im.width, im.height, show_face)
             success = True
