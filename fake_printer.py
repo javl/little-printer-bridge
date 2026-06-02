@@ -95,6 +95,7 @@ class FakePrinter:
             "type": "printer_join_request",
             "bridge_address": self._bridge_address,
             "device_address": self._be_addr,
+            "printer_type": "fake",
         })
         log.info("Sent printer_join_request for %s", self._be_addr)
 
@@ -103,6 +104,7 @@ class FakePrinter:
             "type": "printer_connected",
             "bridge_address": self._bridge_address,
             "device_address": self._be_addr,
+            "printer_type": "fake",
         })
         log.info("Sent printer_connected for %s", self._be_addr)
 
