@@ -234,6 +234,31 @@ class USBPrinter:
     def __init__(self, info: USBPrinterInfo):
         self.info = info
         self._lock = asyncio.Lock()
+        self._printer = None  # persistent escpos connection
+
+    def _get_printer(self):
+        """Return the open escpos printer instance, opening if needed."""
+        from escpos.printer import Usb as EscposUsb
+        if self._printer is None or self._printer._device is None:
+            if self._printer is not None:
+                try:
+                    self._printer.close()
+                except Exception:
+                    pass
+            p = EscposUsb(self.info.vendor_id, self.info.product_id)
+            p.open()
+            p.profile.profile_data['media']['width']['pixels'] = self.info.paper_width_pixels
+            self._printer = p
+        return self._printer
+
+    def _reset_printer(self):
+        """Force-close the persistent connection so next call to _get_printer reopens."""
+        if self._printer is not None:
+            try:
+                self._printer.close()
+            except Exception:
+                pass
+            self._printer = None
 
     async def keepalive_loop(self, interval: int = 60):
         """Periodically ping the printer to prevent USB autosuspend."""
@@ -247,15 +272,13 @@ class USBPrinter:
                 log.debug("USB keepalive ping failed for %s: %s", self.info.usb_key, e)
 
     def _ping_sync(self):
-        from escpos.printer import Usb as EscposUsb
-        p = EscposUsb(self.info.vendor_id, self.info.product_id)
         try:
+            p = self._get_printer()
             # DLE EOT 1: real-time status request, touches USB without printing
             p._raw(b'\x10\x04\x01')
-        except Exception:
-            pass
-        finally:
-            p.close()
+        except Exception as e:
+            log.debug("USB ping failed for %s, will reconnect: %s", self.info.usb_key, e)
+            self._reset_printer()
 
     async def print_lp_binary(self, binary: bytes, rotate_180: bool = False, cut_after_print: bool = False):
         """Decode an LP thermal binary payload and print it via ESC/POS."""
@@ -270,7 +293,6 @@ class USBPrinter:
         return im.resize((paper_width, new_height), Image.Resampling.LANCZOS)
 
     def _print_sync(self, binary: bytes, rotate_180: bool = False, cut_after_print: bool = False):
-        from escpos.printer import Usb as EscposUsb
         from .image_encoding import lp_binary_to_pil, load_image
         from .protocol import CMD_SET_DELIVERY_AND_PRINT
 
@@ -283,9 +305,8 @@ class USBPrinter:
         im = self._scale(lp_binary_to_pil(binary), paper_width)
         # if rotate_180:
         #     im = im.rotate(180)
-        p = EscposUsb(self.info.vendor_id, self.info.product_id)
-        p.profile.profile_data['media']['width']['pixels'] = paper_width
         try:
+            p = self._get_printer()
             p.image(im, impl="bitImageColumn", center=False)
             if cut_after_print:
                 try:
@@ -302,8 +323,9 @@ class USBPrinter:
                     p.ln(8)
                 else:
                     log.warning("show_face requested but face_regular.png not found")
-        finally:
-            p.close()
+        except Exception:
+            self._reset_printer()
+            raise
 
 
 def setup_usb_printers(cfg: dict, setup_udev: bool = False) -> dict[str, USBPrinter]:
