@@ -231,6 +231,28 @@ class USBPrinter:
         self.info = info
         self._lock = asyncio.Lock()
 
+    async def keepalive_loop(self, interval: int = 60):
+        """Periodically ping the printer to prevent USB autosuspend."""
+        while True:
+            await asyncio.sleep(interval)
+            loop = asyncio.get_running_loop()
+            try:
+                async with self._lock:
+                    await loop.run_in_executor(None, self._ping_sync)
+            except Exception as e:
+                log.debug("USB keepalive ping failed for %s: %s", self.info.usb_key, e)
+
+    def _ping_sync(self):
+        from escpos.printer import Usb as EscposUsb
+        p = EscposUsb(self.info.vendor_id, self.info.product_id)
+        try:
+            # DLE EOT 1: real-time status request, touches USB without printing
+            p._raw(b'\x10\x04\x01')
+        except Exception:
+            pass
+        finally:
+            p.close()
+
     async def print_lp_binary(self, binary: bytes, rotate_180: bool = False):
         """Decode an LP thermal binary payload and print it via ESC/POS."""
         loop = asyncio.get_running_loop()
