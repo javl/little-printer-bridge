@@ -140,7 +140,10 @@ def check_udev_access(vendor_id: int, product_id: int) -> bool:
         return True
     except usb.core.USBError as e:
         if e.errno in (13, 1) or "permission" in str(e).lower() or "access" in str(e).lower():
-            _udev_hint(vendor_id, product_id)
+            if sys.platform == "linux":
+                _udev_hint(vendor_id, product_id)
+            else:
+                log.warning("USB printer %04x:%04x is not accessible: %s", vendor_id, product_id, e)
         else:
             log.warning("USB error checking %04x:%04x: %s", vendor_id, product_id, e)
         return False
