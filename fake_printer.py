@@ -16,7 +16,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 import websockets
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from bridge.claiming import generate_claim_code
 from bridge.config import load as load_config, save as save_config
@@ -150,6 +150,12 @@ class FakePrinter:
 
             if data.get("rotate_180", False):
                 im = im.transpose(Image.Transpose.ROTATE_180)
+            if data.get("cut_after_print", False):
+                if im.mode != "RGB":
+                    im = im.convert("RGB")
+                draw = ImageDraw.Draw(im)
+                draw.line((0, im.height, im.width, im.height), fill=(255, 0, 0), width=40)
+
             im.save(self._output_path)
             log.info("Saved to receipt.png (%dx%d, face=%s)", im.width, im.height, show_face)
             success = True
