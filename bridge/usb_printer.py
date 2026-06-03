@@ -281,8 +281,8 @@ class USBPrinter:
 
         paper_width = self.info.paper_width_pixels
         im = self._scale(lp_binary_to_pil(binary), paper_width)
-        if rotate_180:
-            im = im.rotate(180)
+        # if rotate_180:
+        #     im = im.rotate(180)
         p = EscposUsb(self.info.vendor_id, self.info.product_id)
         p.profile.profile_data['media']['width']['pixels'] = paper_width
         try:
