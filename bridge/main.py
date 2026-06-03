@@ -386,6 +386,8 @@ async def run_lp_server(args):
         tasks = [server_loop()]
         if bridge:
             tasks.append(join_loop())
+        for usb_printer in usb_printers.values():
+            tasks.append(usb_printer.keepalive_loop())
         try:
             await asyncio.gather(*tasks)
         except asyncio.CancelledError:
