@@ -51,7 +51,12 @@ If all you want to do is get a working bridge you can ignore this section: check
 
 ---
 
-You'll need Python 3 installed. I suggest creating a virtual environment to keep dependencies isolated:
+If you want to connect a USB printer make sure you have `libusb` installed:
+
+* Linux: `sudo apt-get install libusb-1.0-0-dev`
+* Mac: easiest way is by using [brew](https://brew.sh/): `brew install libusb`
+
+You'll need Python 3.9+ installed. I suggest creating a virtual environment to keep dependencies isolated:
 
 ```bash
 git clone git@github.com:javl/little-printer-zigbee-bridge.git

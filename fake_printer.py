@@ -95,6 +95,7 @@ class FakePrinter:
             "type": "printer_join_request",
             "bridge_address": self._bridge_address,
             "device_address": self._be_addr,
+            "printer_type": "fake",
         })
         log.info("Sent printer_join_request for %s", self._be_addr)
 
@@ -103,6 +104,7 @@ class FakePrinter:
             "type": "printer_connected",
             "bridge_address": self._bridge_address,
             "device_address": self._be_addr,
+            "printer_type": "fake",
         })
         log.info("Sent printer_connected for %s", self._be_addr)
 
@@ -145,6 +147,9 @@ class FakePrinter:
                 im.paste(receipt, (0, face.height))
             else:
                 im = receipt
+
+            if data.get("rotate_180", False):
+                im = im.transpose(Image.Transpose.ROTATE_180)
             im.save(self._output_path)
             log.info("Saved to receipt.png (%dx%d, face=%s)", im.width, im.height, show_face)
             success = True

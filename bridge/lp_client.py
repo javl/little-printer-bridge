@@ -42,20 +42,24 @@ class LPClient:
     # --- Public API (called from main.py join_loop) ---
 
     async def send_encryption_key_required(self, device_address: str):
+        printer_type = "usb" if device_address in self._usb_printers else "littleprinter"
         await self._send({
             "type": "printer_join_request",
             "bridge_address": self._bridge_address,
             "device_address": device_address,
+            "printer_type": printer_type,
         })
-        log.info("→ printer_join_request for %s", device_address)
+        log.info("→ printer_join_request for %s (type=%s)", device_address, printer_type)
 
     async def send_device_connect(self, device_address: str):
+        printer_type = "usb" if device_address in self._usb_printers else "littleprinter"
         await self._send({
             "type": "printer_connected",
             "bridge_address": self._bridge_address,
             "device_address": device_address,
+            "printer_type": printer_type,
         })
-        log.info("→ printer_connected for %s", device_address)
+        log.info("→ printer_connected for %s (type=%s)", device_address, printer_type)
 
     # --- Connection and receive loop ---
 
