@@ -148,8 +148,11 @@ class FakePrinter:
             else:
                 im = receipt
 
+            # Rotate the face (but not the receipt) 180 degrees
             if data.get("rotate_180", False):
                 im = im.transpose(Image.Transpose.ROTATE_180)
+
+            # Draw a red line at the bottom to indicate cutting after print
             if data.get("cut_after_print", False):
                 if im.mode != "RGB":
                     im = im.convert("RGB")
