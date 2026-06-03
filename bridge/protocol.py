@@ -1,4 +1,5 @@
 import struct
+from typing import Optional
 
 from . import image_encoding
 from os import path
@@ -54,11 +55,11 @@ def split_into_blocks(data: bytes) -> list[bytes]:
 
 
 def prepare_print_job(
-    image_path: str | None,
-    text: str | None,
+    image_path: Optional[str],
+    text: Optional[str],
     print_id: int,
     no_face: bool = False,
-    max_height: int | None = None,
+    max_height: Optional[int] = None,
     dither: bool = False,
 ) -> list[bytes]:
     """Return ordered list of blocks ready to send to the printer.

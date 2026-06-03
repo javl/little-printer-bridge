@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 import struct
+from typing import Optional
 
 import websockets
 
@@ -30,7 +31,7 @@ def _be_to_eui64(be_addr: str) -> str:
 
 class LPClient:
     def __init__(self, bridge, cfg: dict, server_url: str = DEFAULT_SERVER_URL,
-                 usb_printers: dict | None = None):
+                 usb_printers: Optional[dict] = None):
         self._bridge = bridge
         self._cfg = cfg
         self._bridge_address = cfg.get("extended_pan_id", "0000000000000000")

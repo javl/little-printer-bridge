@@ -90,7 +90,7 @@ class LittlePrinterBridge:
         # Caller can set this to receive EVENT_DID_PRINT / EVENT_DID_POWER_ON
         self.on_printer_event: Optional[Callable] = None
 
-        self._loop: asyncio.AbstractEventLoop | None = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
     # ── Startup ───────────────────────────────────────────────────────────────
 
@@ -434,7 +434,7 @@ class LittlePrinterBridge:
         block_id = 0
         # Pipeline: while waiting for block N's ZCL ACK, send block N+1's fragments.
         # The two phases are independent: fragment state vs ZCL response state don't overlap.
-        prefetch_task: asyncio.Task | None = None
+        prefetch_task: Optional[asyncio.Task] = None
 
         for i, block in enumerate(blocks):
             log.info("Sending block %d/%d (id=%d)", i + 1, len(blocks), block_id)

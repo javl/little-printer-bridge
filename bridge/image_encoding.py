@@ -1,3 +1,5 @@
+from typing import Optional
+
 from PIL import Image, ImageDraw, ImageFont
 from itertools import groupby
 import struct
@@ -146,7 +148,7 @@ def create_blank_image(height: int = 64) -> Image.Image:
     return Image.new("L", (PRINT_WIDTH, height), 255)
 
 
-def load_image(path: str, max_height: int | None = None) -> Image.Image:
+def load_image(path: str, max_height: Optional[int] = None) -> Image.Image:
     im = Image.open(path)
     if im.mode == "RGBA":
         bg = Image.new("L", im.size, 255)

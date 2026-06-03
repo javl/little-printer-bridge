@@ -14,6 +14,7 @@ import argparse
 import asyncio
 import logging
 import sys
+from typing import Optional
 
 from . import config as cfg_module
 from .claiming import link_key_from_claim_code, hardware_xor_from_eui64, InvalidClaimCode
@@ -137,7 +138,7 @@ async def run(args):
         # Bridge is now running. Rest of this method contains various modes of
         # operation (run webserver, direct print, etc.) which can be triggered
         # via CLI args.
-        print_target: dict | None = None
+        print_target: Optional[dict] = None
         if args.image or args.text or args.personality:
             print_target = {
                 "image": args.image,
@@ -167,7 +168,7 @@ async def run(args):
         # Flow for new printer:
         #   1st event: DENY_JOIN  → handle_join installs key, loops back
         #   2nd event: ACCEPTED   → printer is ready
-        target_eui64: str | None = None
+        target_eui64: Optional[str] = None
 
         while target_eui64 is None:
             log.info("Waiting for printer to join...")
@@ -394,7 +395,7 @@ async def run_lp_server(args):
             await bridge.stop()
 
 
-def _find_paired_printer(cfg: dict) -> str | None:
+def _find_paired_printer(cfg: dict) -> Optional[str]:
     devices = cfg.get("devices", {})
     if devices:
         return next(iter(devices))
