@@ -212,9 +212,13 @@ def print_claim_slip(vendor_id: int, product_id: int, claim_code: str):
         p.text("\n\nand enter the following claim code:\n\n")
 
         p.set(align="center", bold=True, custom_size=True, width=2, height=2)
-        p.text(f"{claim_code}\n\n\n")
+        p.text(f"{claim_code}\n\n\n\n\n\n\n")
 
-        # p.cut()
+        try:
+            p.cut()
+        except Exception:
+            pass  # not all printers support cutting
+
         p.close()
     except Exception as e:
         log.warning("Could not print claim slip on USB printer: %s", e)
@@ -253,10 +257,10 @@ class USBPrinter:
         finally:
             p.close()
 
-    async def print_lp_binary(self, binary: bytes, rotate_180: bool = False):
+    async def print_lp_binary(self, binary: bytes, rotate_180: bool = False, cut_after_print: bool = False):
         """Decode an LP thermal binary payload and print it via ESC/POS."""
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._print_sync, binary, rotate_180)
+        await loop.run_in_executor(None, self._print_sync, binary, rotate_180, cut_after_print)
 
     def _scale(self, im, paper_width: int):
         from PIL import Image
@@ -265,7 +269,7 @@ class USBPrinter:
         new_height = round(im.height * paper_width / im.width)
         return im.resize((paper_width, new_height), Image.Resampling.LANCZOS)
 
-    def _print_sync(self, binary: bytes, rotate_180: bool = False):
+    def _print_sync(self, binary: bytes, rotate_180: bool = False, cut_after_print: bool = False):
         from escpos.printer import Usb as EscposUsb
         from .image_encoding import lp_binary_to_pil, load_image
         from .protocol import CMD_SET_DELIVERY_AND_PRINT
@@ -283,8 +287,12 @@ class USBPrinter:
         p.profile.profile_data['media']['width']['pixels'] = paper_width
         try:
             p.image(im, impl="bitImageColumn", center=False)
-            # p.cut()
-            print("show face: ", show_face)
+            if cut_after_print:
+                try:
+                    p.cut()
+                except Exception:
+                    pass  # not all printers support cutting
+
             if show_face:
                 if os.path.exists(_FACE_IMAGE_PATH):
                     face_im = self._scale(load_image(_FACE_IMAGE_PATH), paper_width)

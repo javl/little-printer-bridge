@@ -171,13 +171,15 @@ class LPClient:
         be_addr = data["device_address"]
         binary = base64.b64decode(data["payload"])
         rotate_180 = data.get("rotate_180", False)
+        cut_after_print = data.get("cut_after_print", False)
 
+        # If the address matches a USB printer
         if be_addr in self._usb_printers:
             usb_printer = self._usb_printers[be_addr]
             log.info("← print (cmd_id=%s) for USB printer %s", command_id, be_addr)
             try:
                 async with usb_printer._lock:
-                    await usb_printer.print_lp_binary(binary, rotate_180=rotate_180)
+                    await usb_printer.print_lp_binary(binary, rotate_180=rotate_180, cut_after_print=cut_after_print)
                 success = True
                 asyncio.get_event_loop().create_task(self._send_usb_did_print(be_addr))
             except Exception as exc:
@@ -186,6 +188,7 @@ class LPClient:
             await self._send({"type": "print_ack", "command_id": command_id, "success": success})
             return
 
+        # Otherwise we are dealing with a Zigbee printer
         eui64_hex = _be_to_eui64(be_addr)
         blocks = split_into_blocks(binary)
         log.info("← print (cmd_id=%s) for %s - %d block(s)", command_id, be_addr, len(blocks))
