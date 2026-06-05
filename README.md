@@ -75,7 +75,7 @@ There are two ways to run this Python bridge:
 
 ### Option 1: Install the bridge on a Raspberry Pi
 
-Setting up this bridge on a Raspberry Pi doesn't require any programming. Below are the basic instructions, or [read the full instructions](https://github.com/javl/little-printer-bridge/wiki/Install-on-Raspberry-Pi/_edit) (including screenshots).
+Setting up this bridge on a Raspberry Pi doesn't require any programming. Below are the basic instructions, or [read the full instructions](https://github.com/javl/little-printer-bridge/wiki/Install-on-Raspberry-Pi/) (including screenshots).
 
 #### What you'll need:
 
