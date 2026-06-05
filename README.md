@@ -4,188 +4,208 @@
 # Little Printer Bridge
 
 ## What is this about?
-The Little Printer is an internet connected receipt printer, released by BERG in 2012. The original Little Printer servers went offline in 2015 though, and the printers stopped working. The only real alternative to those servers depends on the user flashing new firmware to their bridge - which not all users are able to do, and some people even reported their bridge got corrupted, so trying to update the firmware isn't even an option.
 
-## This new Little Printer ecosystem
+The Little Printer is an internet-connected thermal receipt printer released by BERG in 2012. But when their servers went down in 2015, the printers stopped working.
 
-The Little Printer project I've been working on contains three parts:
+There is altered firmware available for the bridge - the device that sits between the printer and your router - that makes it use an alternative server, but flashing this firmware requires some technical knowhow and it won't help users who's bridge broke or got lost over the years.
 
-####  1. Python bridge (this repository):
-A Python script that can fully replace the original bridge device. You need a Zigbee USB dongle and a computer to run the bridge on. Or you can use a Raspberry Pi to create a new, standalone bridge device. This new bridge software also works with USB receipt printers (though I've only tested two Epson models).
+This project means to offer an alternative to the original bridge by using a Raspberry Pi + Zigbee dongle, or an ESP32-C6 microcontroller. It also extends the system with support for USB receipt printers.
 
-#### 2. ESP32 bridge:
-An alternative to this Python bridge, which runs on an Seeed Studio XIAO ESP32-C6 microcontroller. This device is even cheaper and smaller than a Raspberry Pi zero, but does not support USB printers. More information and a flashing tool can be found at [littleprinter.jaspervanloenen.com/esp-bridge](https://littleprinter.jaspervanloenen.com/esp-bridge).
 
-#### 3. New server:
-The third part is a new (privacy friendly) server, available at [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com). This server reintroduces the ability to update the printer's personality - the face that gets printed after every message - and is in active development.
-
-## Support
-Did you find this tool useful? Feel free to support my open source tools - especially when using them commercially:
-
-[![GitHub Sponsor](https://img.shields.io/badge/_-sponsor_on_Github-blue?logo=github)](https://github.com/sponsors/javl) [![BMC](https://img.shields.io/badge/Buy_Me_a_Coffee-orange?logo=buymeacoffee)](https://www.buymeacoffee.com/javl)
-
+---
 
 - [Little Printer Bridge](#little-printer-bridge)
   - [What is this about?](#what-is-this-about)
-  - [This new Little Printer ecosystem](#this-new-little-printer-ecosystem)
-      - [1. Python bridge (this repository):](#1-python-bridge-this-repository)
-      - [2. ESP32 bridge:](#2-esp32-bridge)
-      - [3. New server:](#3-new-server)
+  - [Ecosystem](#ecosystem)
+    - [1. Python bridge (this repository)](#1-python-bridge-this-repository)
+    - [2. ESP32 bridge](#2-esp32-bridge)
+    - [3. New server](#3-new-server)
   - [Support](#support)
   - [Installation](#installation)
-    - [Option 1. Install the bridge on a Rasberry Pi](#option-1-install-the-bridge-on-a-rasberry-pi)
-    - [network-config - update with your wifi credentials](#network-config---update-with-your-wifi-credentials)
-    - [user-data](#user-data)
-    - [Option 2. Run the Python bridge locally](#option-2-run-the-python-bridge-locally)
+    - [Option 1: Install the bridge on a Raspberry Pi](#option-1-install-the-bridge-on-a-raspberry-pi)
+      - [What you'll need:](#what-youll-need)
+      - [Installation steps:](#installation-steps)
+    - [Option 2: Run the Python bridge locally](#option-2-run-the-python-bridge-locally)
   - [Settings and arguments](#settings-and-arguments)
     - [Supported servers](#supported-servers)
-  - [License](#license)
     - [Arguments](#arguments)
   - [Fake printer (local testing)](#fake-printer-local-testing)
     - [Arguments](#arguments-1)
     - [Examples](#examples)
   - [config.json](#configjson)
+  - [Troubleshooting](#troubleshooting)
   - [Thanks](#thanks)
-  - [Random Error Fixes / Notes](#random-error-fixes--notes)
+  - [License](#license)
 
+---
+
+## Ecosystem
+
+The project contains three parts:
+
+### 1. Python bridge (this repository)
+
+A Python script that can fully replace the original bridge device. You need a Zigbee USB dongle and a computer to run the bridge on, or you can use a Raspberry Pi to create a new standalone bridge device. This bridge also works with USB receipt printers (two Epson models have been tested).
+
+### 2. ESP32 bridge
+
+An alternative to this Python bridge that runs on a Seeed Studio XIAO ESP32-C6 microcontroller. This device is even cheaper and smaller than a Raspberry Pi Zero, but does not support USB printers. More information and a flashing tool can be found at [littleprinter.jaspervanloenen.com/esp-bridge](https://littleprinter.jaspervanloenen.com/esp-bridge).
+
+### 3. New server
+
+A new privacy-friendly server available at [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com). This server reintroduces the ability to update the printer's personality - the face printed after every message - and is in active development.
+
+---
+## Support
+
+Did you find this tool useful? Feel free to support my open source tools - especially when using them commercially:
+
+[![GitHub Sponsor](https://img.shields.io/badge/_-sponsor_on_Github-blue?logo=github)](https://github.com/sponsors/javl) [![BMC](https://img.shields.io/badge/Buy_Me_a_Coffee-orange?logo=buymeacoffee)](https://www.buymeacoffee.com/javl)
+
+---
 
 ## Installation
 
-> If you don't have a Raspberry Pi and/or Zigbee dongle, or you just want a cheaper and smaller alternative, you can get the [Seeed Studio XIAO ESP32-C6](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C6-p-5884.html) and flash the bridge firmware via the online tool at [littleprinter.jaspervanloenen.com/esp-bridge](https://littleprinter.jaspervanloenen.com/esp-bridge).
+> If you don't have a Raspberry Pi and/or Zigbee dongle, or want a cheaper and smaller alternative, you can get the [Seeed Studio XIAO ESP32-C6](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C6-p-5884.html) and flash the bridge firmware via the online tool at [littleprinter.jaspervanloenen.com/esp-bridge](https://littleprinter.jaspervanloenen.com/esp-bridge).
 
 There are two ways to run this Python bridge:
-1. Setup and run the Python bridge on a Raspberry Pi
-2. Run it directly on your local machine.
 
-### Option 1. Install the bridge on a Rasberry Pi
-Setting up this Little Printer Bridge on Raspberry Pi is easy and doesn't require any programming. Below are the basic instructions, or visit [this page](https://github.com/javl/little-printer-bridge/wiki/Install-on-Raspberry-Pi/_edit) for full instructions - including screenshots.
+1. Set up and run the Python bridge on a Raspberry Pi
+2. Run it directly on your local machine
 
-Things you'll need:
-* A Raspberry Pi - I'm using the older Zero W model
+### Option 1: Install the bridge on a Raspberry Pi
+
+Setting up this bridge on a Raspberry Pi doesn't require any programming. Below are the basic instructions, or [read the full instructions](https://github.com/javl/little-printer-bridge/wiki/Install-on-Raspberry-Pi/_edit) (including screenshots).
+
+#### What you'll need:
+
+* A Raspberry Pi - the older Zero W model works fine
 * Power adapter for the Raspberry Pi
-* An SD card - something like 8GB is fine - and an SD card reader to connect it to your computer
-* A Zigbee adapter - I'm using the Sonoff ZBDongle-E
-* If your Raspberry Pi model doesn't have full size USB ports you'll need a USB-A to micro-USB adapter
-* Zigbee adapters are known to receive a lot of interference when plugged directly into a Raspberry Pi, so you might need a small USB extension cable.
+* An SD card (8 GB is sufficient) and an SD card reader
+* A Zigbee adapter - the Sonoff ZBDongle-E works well
+* A USB-A to micro-USB adapter if your Raspberry Pi model doesn't have full-size USB ports
+* A short USB extension cable - Zigbee adapters are prone to interference when plugged directly into a Raspberry Pi
 
-Install the Little Printer Bridge to the Raspberry Pi (again, instructions including screenshots [over here](https://github.com/javl/little-printer-bridge/wiki/Install-on-Raspberry-Pi/_edit)):
 
-1. Insert your SD card into your reader
-2. Download the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) software and use it to flash the latest Raspberry OS Lite image to the SD card. Whe you get to the `customisation` section, press skip.
-3. When flashing is done open the newly created `boot` partition of the SD card and paste below scripts into the `network-config` and `user-data` files.
 
-### network-config - update with your wifi credentials
+#### Installation steps:
+1. Insert your SD card into your reader.
+2. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/), use it to flash the latest Raspberry Pi OS Lite image to the SD card. When you get to the `customisation` section, press skip.
+3. When flashing is done, open the newly created `boot` partition and paste the scripts below into the `network-config` and `user-data` files.
 
-```yaml
-network:
-  version: 2
-  wifis:
-    wlan0:
-      dhcp4: true
-      # Change this to your country code (ISO 3166-1 alpha-2)
-      regulatory-domain: "NL"
-      access-points:
-        "YourNetworkName":
-          password: "YourPassword"
-      optional: false
-```
+   **network-config** - update with your WiFi credentials:
 
-### user-data
+   ```yaml
+   network:
+     version: 2
+     wifis:
+       wlan0:
+         dhcp4: true
+         # Change this to your country code (ISO 3166-1 alpha-2)
+         regulatory-domain: "NL"
+         access-points:
+           "YourNetworkName":
+             password: "YourPassword"
+         optional: false
+   ```
 
-```yaml
-  #cloud-config
+   **user-data:**
 
-  hostname: little-printer-bridge
-  manage_etc_hosts: true
+   ```yaml
+     #cloud-config
 
-  timezone: Europe/Amsterdam
-  keyboard:
-    layout: us
+     hostname: little-printer-bridge
+     manage_etc_hosts: true
 
-  # Create bridge user
-  users:
-    - name: bridge
-      groups: users,adm,dialout,audio,netdev,video,plugdev,cdrom,games,input,gpio,spi,i2c,render,sudo
-      shell: /bin/bash
-      lock_passwd: false
-      passwd: "$6$boqkDuR6gaVxXbFA$glw/miVRIqHulbFK0Bebyyov0NKQ3z7tlyUS7RYkXGjDozcEiSG.jSw2IDSI/ghItMpaJx/92Zajr.v6ebqmU1"
+     timezone: Europe/Amsterdam
+     keyboard:
+       layout: us
 
-  rpi:
-    interfaces:
-      i2c: true
-      spi: true
+     # Create bridge user
+     users:
+       - name: bridge
+         groups: users,adm,dialout,audio,netdev,video,plugdev,cdrom,games,input,gpio,spi,i2c,render,sudo
+         shell: /bin/bash
+         lock_passwd: false
+         passwd: "$6$boqkDuR6gaVxXbFA$glw/miVRIqHulbFK0Bebyyov0NKQ3z7tlyUS7RYkXGjDozcEiSG.jSw2IDSI/ghItMpaJx/92Zajr.v6ebqmU1"
 
-  # SSH disabled by default for security
-  # enable_ssh: true
+     rpi:
+       interfaces:
+         i2c: true
+         spi: true
 
-  # Update system packages
-  package_update: true
-  packages:
-    - libopenjp2-7
-    - python3-pip
-    - git
-    - libfreetype-dev
+     # SSH disabled by default for security
+     # enable_ssh: true
 
-  # Create service file
-  write_files:
-    - path: /etc/systemd/system/little-printer-bridge.service
-      permissions: '0644'
-      owner: root:root
-      content: |
-        [Unit]
-        Description=Little Printer Bridge Script
-        After=network-online.target
-        Wants=network-online.target
+     # Update system packages
+     package_update: true
+     packages:
+       - libopenjp2-7
+       - python3-pip
+       - git
+       - libfreetype-dev
 
-        [Service]
-        Type=simple
-        User=bridge
-        WorkingDirectory=/opt/little-printer-bridge
-        ExecStartPre=/bin/sh -c 'until ping -c1 1.1.1.1 > /dev/null 2>&1; do sleep 2; done'
+     # Create service file
+     write_files:
+       - path: /etc/systemd/system/little-printer-bridge.service
+         permissions: '0644'
+         owner: root:root
+         content: |
+           [Unit]
+           Description=Little Printer Bridge Script
+           After=network-online.target
+           Wants=network-online.target
 
-        ExecStart=/opt/little-printer-bridge/venv/bin/python3 -m bridge.main
+           [Service]
+           Type=simple
+           User=bridge
+           WorkingDirectory=/opt/little-printer-bridge
+           ExecStartPre=/bin/sh -c 'until ping -c1 1.1.1.1 > /dev/null 2>&1; do sleep 2; done'
 
-        Restart=on-failure
-        RestartSec=10
+           ExecStart=/opt/little-printer-bridge/venv/bin/python3 -m bridge.main
 
-        [Install]
-        WantedBy=multi-user.target
+           Restart=on-failure
+           RestartSec=10
 
-  runcmd:
-    # Clone the repository into /opt
-    - git clone https://github.com/javl/little-printer-bridge.git /opt/little-printer-bridge
+           [Install]
+           WantedBy=multi-user.target
 
-    # Transfer folder ownership to the bridge user so it can generate config.json
-    - chown -R bridge:bridge /opt/little-printer-bridge
+     runcmd:
+       # Clone the repository into /opt
+       - git clone https://github.com/javl/little-printer-bridge.git /opt/little-printer-bridge
 
-    # Create virtual env
-    - python3 -m venv /opt/little-printer-bridge/venv
+       # Transfer folder ownership to the bridge user so it can generate config.json
+       - chown -R bridge:bridge /opt/little-printer-bridge
 
-    # Install python requirements into venv
-    - /opt/little-printer-bridge/venv/bin/pip install -r /opt/little-printer-bridge/bridge/requirements.txt
+       # Create virtual env
+       - python3 -m venv /opt/little-printer-bridge/venv
 
-    # Tell systemd to find the file created by write_files, then boot it up
-    - systemctl daemon-reload
-    - systemctl enable little-printer-bridge.service
-    - systemctl start little-printer-bridge.service
+       # Install python requirements into venv
+       - /opt/little-printer-bridge/venv/bin/pip install -r /opt/little-printer-bridge/bridge/requirements.txt
 
-    # Disable cloud-init for subsequent boots
-    - touch /etc/cloud/cloud-init.disabled
-```
+       # Tell systemd to find the file created by write_files, then boot it up
+       - systemctl daemon-reload
+       - systemctl enable little-printer-bridge.service
+       - systemctl start little-printer-bridge.service
 
-4. Eject the SD card, insert it into the Raspberry Pi, and power it on
-5. The script will automatically run and install everything. During this process the Raspberry Pi will reboot multiple times. Depending on your internet speed and the model of Raspberry Pi used this can take a while. On my Raspberry Pi Zero W this takes about 20 minutes.
+       # Disable cloud-init for subsequent boots
+       - touch /etc/cloud/cloud-init.disabled
+   ```
 
-The easiest way to see if it worked is by putting your Little Printer into pairing mode by holding the button on the inside until the light turns off. The light will then blink as the printer searches for a bridge, and will turn solid when it finds the bridge and has a claim code for you.
+4. Eject the SD card, insert it into the Raspberry Pi, and power it on.
+5. The script will automatically run and install everything. The Raspberry Pi will reboot multiple times during this process. Depending on your internet speed and Raspberry Pi model this can take a while - around 20 minutes on a Raspberry Pi Zero W.
 
-Press the button on top to print the code and visit [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com) to claim your printer and start printing.
+To verify it worked, put your Little Printer into pairing mode by holding the button on the inside until the light turns off. The light will blink while the printer searches for a bridge, then turn solid when it finds one and has a claim code ready.
 
-### Option 2. Run the Python bridge locally
-* The Python bridge has been tested with **Python 3.9** and up, on Linux and Macos.
-* For use with Little Printer, you'll need a Zigbee adapter - for example, the Sonoff ZBDongle-E.
-* If you want to use a USB printer you'll need to have `libusb` installed (see note below).
+Press the button on top to print the code, then visit [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com) to claim your printer and start printing.
 
-Get the code, install the python dependencies and run the bridge. Depending on your system you might have to replace `python3` and `pip3` with `python` and `pip`. Just make sure `python --version` returns version >= 3.9. I suggest creating a virtual environment to keep dependencies isolated:
+### Option 2: Run the Python bridge locally
+
+* Tested with **Python 3.9** and up, on Linux and macOS
+* For use with Little Printer, you need a Zigbee adapter - for example, the Sonoff ZBDongle-E
+* For USB printer support you need `libusb` installed (see [Troubleshooting](#troubleshooting))
+
+Get the code, install the Python dependencies and run the bridge. Depending on your system you may need to replace `python3` and `pip3` with `python` and `pip` - verify with `python --version` that the version is >= 3.9. Using a virtual environment is recommended:
 
 ```bash
 git clone git@github.com:javl/little-printer-bridge.git
@@ -200,21 +220,20 @@ python3 -m bridge.main
 python3 -m bridge.main --no-zigbee
 ```
 
-The easiest way to see if it worked is by putting your Little Printer into pairing mode by holding the button on the inside until the light turns off. The light will then blink as the printer searches for a bridge, and will turn solid when it finds the bridge and has a claim code for you.
+To verify it worked, put your Little Printer into pairing mode by holding the button on the inside until the light turns off. The light will blink while the printer searches for a bridge, then turn solid when it finds one and has a claim code ready.
 
-Press the button on top to print the code and visit [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com) to claim your printer and start printing.
+Press the button on top to print the code, then visit [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com) to claim your printer and start printing.
+
+---
 
 ## Settings and arguments
 
 ### Supported servers
-Both the Raspberry Pi bridge and the ESP32-c6 bridge support two types of servers:
 
-1. Sirius based servers, like the one hosted by [Nord Projects](https://littleprinter.nordprojects.co/). This server has been the main replacement for most people, but it has some limitations - most notably the requirement to log in with an X account. To use a Sirius server, add the `--sirius` flag. By default this will use Nord Projects' server, but you can also specify a different Sirius server using `--sirius-server-url <URL>`
-2. The new server I am hosting at [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com). This is privacy friendly alternative with both support for original Little Printers and USB receipt printers. It also reintroduced support for `personalities`: the ability to update the face that gets printed after every message.
+Both the Raspberry Pi bridge and the ESP32-C6 bridge support two types of servers:
 
-## License
-In the spirit of open source this project is shared under a GNU GPLv3 license. This means you can use it pretty much in any way you like (including commercially) as long as you give proper attribution and share any changes you make. If you do make any changes that might benefit others, please share them here as a pull request as well, to prevent too many fractured versions of this code.
-
+1. **The new server** at [littleprinter.jaspervanloenen.com](https://littleprinter.jaspervanloenen.com). A privacy-friendly alternative with support for both original Little Printers and USB receipt printers, including `personalities` (the face printed after every message).
+2. **Sirius-based servers**, such as the one hosted by [Nord Projects](https://littleprinter.nordprojects.co/). This has been the main replacement for most people but has some limitations - most notably requiring an X account to log in. To use a Sirius server, add the `--sirius` flag. By default this uses Nord Projects' server, but you can specify a different one with `--sirius-server-url <URL>`.
 
 ### Arguments
 
@@ -235,7 +254,7 @@ In the spirit of open source this project is shared under a GNU GPLv3 license. T
 
 ## Fake printer (local testing)
 
-`fake_printer.py` emulates a Little Printer over WebSocket - no Zigbee dongle or physical hardware needed - which can be useful for testing. Incoming prints are saved as `receipt.png`.
+`fake_printer.py` emulates a Little Printer over WebSocket - no Zigbee dongle or physical hardware needed - useful for testing. Incoming prints are saved as `receipt.png`.
 
 ```bash
 python3 fake_printer.py
@@ -289,56 +308,73 @@ Generated automatically on first run:
 
 ---
 
+## Troubleshooting
+
+**`FileNotFoundError: [Errno 2] No such file or directory: '/dev/ttyUSB0'`**
+
+Dongle not detected at the given port. Make sure it is plugged in and update the port in `config.json` if needed.
+
+---
+
+**Windows: drivers for the Sonoff Zigbee dongle**
+
+1. Download `CP210x Universal Windows Driver` from [silabs.com](https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads).
+2. Extract the `.zip` file somewhere on your system.
+3. Open Device Manager, right-click your dongle in the list and select `Update Driver`. Select the directory you extracted the driver to.
+4. Find the Sonoff device under `Ports` and note the COM port (e.g. `COM3`). Update `bridge/config.json` accordingly or pass `--port COMx` to the script.
+
+---
+
+**`ImportError: libopenjp2.so.7: cannot open shared object file: No such file or directory`**
+
+Install the missing module:
+
+```bash
+sudo apt-get install libopenjp2-7
+```
+
+---
+
+**USB ESC/POS printer: "insufficient permissions" or claim slip not printing**
+
+Access to USB devices requires the right permissions. The bridge logs the exact command to fix this.
+
+**Linux / Raspberry Pi:** Create a udev rule for your printer's vendor and product ID (shown in the error log):
+
+```bash
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="XXXX", ATTRS{idProduct}=="XXXX", MODE="0666"' \
+  | sudo tee /etc/udev/rules.d/99-usb-printer.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Replace `XXXX:XXXX` with the actual vendor/product ID shown in the log. Unplug and replug the printer afterwards.
+
+**macOS:** libusb usually works without extra steps, but macOS may claim the device with its built-in printer driver, blocking pyusb. If you get a permissions or "device busy" error, unload the Apple USB printer driver temporarily:
+
+```bash
+sudo kextunload -b com.apple.driver.AppleUSBPrinter
+```
+
+Reload it with `sudo kextload -b com.apple.driver.AppleUSBPrinter` when done.
+
+**Windows - this is currently untested! So do let me know how you get on!**: pyusb requires the WinUSB driver instead of the default Windows printer driver. Use [Zadig](https://zadig.akeo.ie/) to replace the driver:
+
+1. Open Zadig, select your printer from the list.
+2. Choose `WinUSB` as the target driver.
+3. Click `Replace Driver`.
+
+Note: this replaces the Windows print driver, so the printer will no longer work with normal Windows print dialogs until you restore the original driver.
+
+---
+
 ## Thanks
 
 - Thanks to [BERG](https://berglondon.com/projects/) for creating the Little Printer in the first place
 - Huge thanks to [Nord Projects](https://nordprojects.com) for reviving the cloud service, providing instructions for updating the bridge device, and creating a new mobile app
 - Anyone who donated to support my open source projects
 
-
 ---
 
-## Random Error Fixes / Notes
-- `FileNotFoundError: [Errno 2] No such file or directory: '/dev/ttyUSB0'`
+## License
 
-    This means your dongle wasn't detected at the given port. Make sure it is plugged in and update the port in `config.json` if needed.
-- On Windows you'll need some drivers for the Sonos Zigbee dongle:
-
-    1. Download `CP210x Universal Windows Driver` from [over here](https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads).
-    2. Extract the `.zip` file somewhere on your system
-    3. Open Device Manager, right click your dongle in the list and select `Update Driver`. Select the directory you extracted the driver to.
-    4. Find the Sonoff device under the `ports` section and note what com port it uses (like `COM3`) and update `bridge/config.json` accordingly (or pass `--port COMx` to the script)
-
-- `ImportError: libopenjp2.so.7: cannot open shared object file: No such file or directory`
-
-        Install the the missing module: `sudo apt-get install libopenjp2-7`
-
-- **USB ESC/POS printer: "insufficient permissions" or claim slip not printing**
-
-    Access to USB devices requires the right permissions. The bridge will log the exact command to fix this, but here is what is needed per platform:
-
-    **Linux / Raspberry Pi:** Create a udev rule for your printer's vendor and product ID (shown in the error log):
-
-    ```bash
-    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="XXXX", ATTRS{idProduct}=="XXXX", MODE="0666"' \
-      | sudo tee /etc/udev/rules.d/99-usb-printer.rules
-    sudo udevadm control --reload-rules && sudo udevadm trigger
-    ```
-
-    Replace `XXXX:XXXX` with the actual vendor/product ID shown in the log. Unplug and replug the printer afterwards.
-
-    **macOS:** libusb usually works without extra steps, but macOS may claim the device with its built-in printer driver, blocking pyusb. If you get a permissions or "device busy" error, unload the Apple USB printer driver temporarily:
-
-    ```bash
-    sudo kextunload -b com.apple.driver.AppleUSBPrinter
-    ```
-
-    Reload it with `sudo kextload -b com.apple.driver.AppleUSBPrinter` when done.
-
-    **Windows:** pyusb requires the WinUSB driver instead of the default Windows printer driver. Use [Zadig](https://zadig.akeo.ie/) to replace the driver:
-
-    1. Open Zadig, select your printer from the list
-    2. Choose `WinUSB` as the target driver
-    3. Click `Replace Driver`
-
-    Note: this replaces the Windows print driver, so the printer will no longer work with normal Windows print dialogs until you restore the original driver.
+In the spirit of open source and to prevent users getting locked out of their printers again, this project is shared under a GNU GPLv3 license. This means you can use it pretty much in any way you like (including commercially) as long as you give proper attribution and share any changes you make. If you do make any changes that might benefit others, please share them here as a pull request as well.
