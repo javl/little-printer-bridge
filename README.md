@@ -96,100 +96,100 @@ Setting up this bridge on a Raspberry Pi doesn't require any programming. Below 
    **network-config** - update with your WiFi credentials:
 
    ```yaml
-   network:
-     version: 2
-     wifis:
-       wlan0:
-         dhcp4: true
-         # Change this to your country code (ISO 3166-1 alpha-2)
-         regulatory-domain: "NL"
-         access-points:
-           "YourNetworkName":
-             password: "YourPassword"
-         optional: false
+network:
+  version: 2
+  wifis:
+    wlan0:
+      dhcp4: true
+      # Change this to your country code (ISO 3166-1 alpha-2)
+      regulatory-domain: "NL"
+      access-points:
+        "YourNetworkName":
+          password: "YourPassword"
+      optional: false
    ```
 
    **user-data:**
 
    ```yaml
-     #cloud-config
+#cloud-config
 
-     hostname: little-printer-bridge
-     manage_etc_hosts: true
+hostname: little-printer-bridge
+manage_etc_hosts: true
 
-     timezone: Europe/Amsterdam
-     keyboard:
-       layout: us
+timezone: Europe/Amsterdam
+keyboard:
+  layout: us
 
-     # Create bridge user
-     users:
-       - name: bridge
-         groups: users,adm,dialout,audio,netdev,video,plugdev,cdrom,games,input,gpio,spi,i2c,render,sudo
-         shell: /bin/bash
-         lock_passwd: false
-         passwd: "$6$boqkDuR6gaVxXbFA$glw/miVRIqHulbFK0Bebyyov0NKQ3z7tlyUS7RYkXGjDozcEiSG.jSw2IDSI/ghItMpaJx/92Zajr.v6ebqmU1"
+# Create bridge user
+users:
+  - name: bridge
+    groups: users,adm,dialout,audio,netdev,video,plugdev,cdrom,games,input,gpio,spi,i2c,render,sudo
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: "$6$boqkDuR6gaVxXbFA$glw/miVRIqHulbFK0Bebyyov0NKQ3z7tlyUS7RYkXGjDozcEiSG.jSw2IDSI/ghItMpaJx/92Zajr.v6ebqmU1"
 
-     rpi:
-       interfaces:
-         i2c: true
-         spi: true
+rpi:
+  interfaces:
+    i2c: true
+    spi: true
 
-     # SSH disabled by default for security
-     # enable_ssh: true
+# SSH disabled by default for security
+# enable_ssh: true
 
-     # Update system packages
-     package_update: true
-     packages:
-       - libopenjp2-7
-       - python3-pip
-       - git
-       - libfreetype-dev
+# Update system packages
+package_update: true
+packages:
+  - libopenjp2-7
+  - python3-pip
+  - git
+  - libfreetype-dev
 
-     # Create service file
-     write_files:
-       - path: /etc/systemd/system/little-printer-bridge.service
-         permissions: '0644'
-         owner: root:root
-         content: |
-           [Unit]
-           Description=Little Printer Bridge Script
-           After=network-online.target
-           Wants=network-online.target
+# Create service file
+write_files:
+  - path: /etc/systemd/system/little-printer-bridge.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=Little Printer Bridge Script
+      After=network-online.target
+      Wants=network-online.target
 
-           [Service]
-           Type=simple
-           User=bridge
-           WorkingDirectory=/opt/little-printer-bridge
-           ExecStartPre=/bin/sh -c 'until ping -c1 1.1.1.1 > /dev/null 2>&1; do sleep 2; done'
+      [Service]
+      Type=simple
+      User=bridge
+      WorkingDirectory=/opt/little-printer-bridge
+      ExecStartPre=/bin/sh -c 'until ping -c1 1.1.1.1 > /dev/null 2>&1; do sleep 2; done'
 
-           ExecStart=/opt/little-printer-bridge/venv/bin/python3 -m bridge.main
+      ExecStart=/opt/little-printer-bridge/venv/bin/python3 -m bridge.main
 
-           Restart=on-failure
-           RestartSec=10
+      Restart=on-failure
+      RestartSec=10
 
-           [Install]
-           WantedBy=multi-user.target
+      [Install]
+      WantedBy=multi-user.target
 
-     runcmd:
-       # Clone the repository into /opt
-       - git clone https://github.com/javl/little-printer-bridge.git /opt/little-printer-bridge
+runcmd:
+  # Clone the repository into /opt
+  - git clone https://github.com/javl/little-printer-bridge.git /opt/little-printer-bridge
 
-       # Transfer folder ownership to the bridge user so it can generate config.json
-       - chown -R bridge:bridge /opt/little-printer-bridge
+  # Transfer folder ownership to the bridge user so it can generate config.json
+  - chown -R bridge:bridge /opt/little-printer-bridge
 
-       # Create virtual env
-       - python3 -m venv /opt/little-printer-bridge/venv
+  # Create virtual env
+  - python3 -m venv /opt/little-printer-bridge/venv
 
-       # Install python requirements into venv
-       - /opt/little-printer-bridge/venv/bin/pip install -r /opt/little-printer-bridge/bridge/requirements.txt
+  # Install python requirements into venv
+  - /opt/little-printer-bridge/venv/bin/pip install -r /opt/little-printer-bridge/bridge/requirements.txt
 
-       # Tell systemd to find the file created by write_files, then boot it up
-       - systemctl daemon-reload
-       - systemctl enable little-printer-bridge.service
-       - systemctl start little-printer-bridge.service
+  # Tell systemd to find the file created by write_files, then boot it up
+  - systemctl daemon-reload
+  - systemctl enable little-printer-bridge.service
+  - systemctl start little-printer-bridge.service
 
-       # Disable cloud-init for subsequent boots
-       - touch /etc/cloud/cloud-init.disabled
+  # Disable cloud-init for subsequent boots
+  - touch /etc/cloud/cloud-init.disabled
    ```
 
 4. Eject the SD card, insert it into the Raspberry Pi, and power it on.
