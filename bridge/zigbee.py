@@ -751,13 +751,13 @@ class LittlePrinterBridge:
         except (IndexError, TypeError, KeyError, AttributeError):
             return
 
-        log.info("messageSent: aps_seq=%d status=%d (expecting seq=%d, %d remaining)",
-                  aps_seq, status, self._expected_aps_seq, self._pending_frag_count)
-
         if self._pending_frag_count > 0 and aps_seq == self._expected_aps_seq:
             if status != EMBER_SUCCESS:
                 self._frag_all_ok = False
             self._frag_ok_count += 1
+        remaining = max(self._pending_frag_count - self._frag_ok_count, 0)
+        log.info("messageSent: aps_seq=%d status=%d (expecting seq=%d, %d remaining)",
+                  aps_seq, status, self._expected_aps_seq, remaining)
             if self._frag_ok_count >= self._pending_frag_count:
                 self._pending_frag_count = 0
                 self._all_frags_done.set()
