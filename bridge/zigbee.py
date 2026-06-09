@@ -435,9 +435,15 @@ class LittlePrinterBridge:
         # Pipeline: while waiting for block N's ZCL ACK, send block N+1's fragments.
         # The two phases are independent: fragment state vs ZCL response state don't overlap.
         prefetch_task: Optional[asyncio.Task] = None
+        total_blocks = len(blocks)
+        last_pct = -1
 
         for i, block in enumerate(blocks):
-            log.info("Sending block %d/%d (id=%d)", i + 1, len(blocks), block_id)
+            log.debug("Sending block %d/%d (id=%d)", i + 1, total_blocks, block_id)
+            pct = (i + 1) * 100 // total_blocks
+            if pct != last_pct:
+                log.info("Print progress: %d%% (%d/%d blocks)", pct, i + 1, total_blocks)
+                last_pct = pct
 
             if prefetch_task is not None:
                 frag_ok = await prefetch_task
