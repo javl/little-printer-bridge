@@ -68,8 +68,11 @@ class LittlePrinterBridge:
 
         self._network_up = asyncio.Event()
         self._join_queue: asyncio.Queue[PrinterJoinEvent] = asyncio.Queue()
-        self._zcl_response_event = asyncio.Event()
-        self._zcl_response_code = -1
+        # Block ACKs land here in arrival order. A queue (not a clear/set Event)
+        # so an ACK that arrives before the send loop waits is buffered, not lost:
+        # the printer can ACK faster than the loop re-arms, which previously wiped
+        # the ACK and caused a spurious timeout + retry = duplicate print.
+        self._zcl_ack_queue: asyncio.Queue[int] = asyncio.Queue()
         self._print_done = asyncio.Event()
 
         # Per-block fragment tracking (reset before each block send).
@@ -424,6 +427,10 @@ class LittlePrinterBridge:
             raise RuntimeError(f"Unknown short address for {eui64_hex}; printer must join first")
 
         self._print_done.clear()
+        # Drop any ACKs left over from a previous job so they can't be misread as
+        # this job's first block ACK.
+        while not self._zcl_ack_queue.empty():
+            self._zcl_ack_queue.get_nowait()
         su_params = list(self._ezsp._protocol.COMMANDS["sendUnicast"][1].keys()) # pyright: ignore[reportOptionalMemberAccess]
         use_v14 = "message_type" in su_params
 
@@ -463,10 +470,9 @@ class LittlePrinterBridge:
                 if not retried:
                     raise RuntimeError(f"Block {block_id} fragment send failed after {BLOCK_RETRY_ATTEMPTS} attempts")
 
-            # Increment ZCL seq and arm the ZCL response event for this block.
+            # Cosmetic ZCL transaction seq for the outgoing frame; the ACK is now
+            # matched by queue arrival order, not by this seq.
             self._zcl_seq = (self._zcl_seq + 1) & 0xFF
-            self._zcl_response_event.clear()
-            self._zcl_response_code = -1
 
             # Pipeline: kick off next block's fragments now, overlapping with ZCL wait.
             if i + 1 < len(blocks):
@@ -475,9 +481,10 @@ class LittlePrinterBridge:
                     self._send_fragments(short_addr, next_id, blocks[i + 1], use_v14)
                 )
 
-            # Wait for this block's ZCL ACK (original: _pending_response.wait(5))
+            # Wait for this block's ZCL ACK. A buffered ACK returns immediately.
             try:
-                await asyncio.wait_for(self._zcl_response_event.wait(), timeout=BLOCK_SEND_TIMEOUT)
+                return_code = await asyncio.wait_for(
+                    self._zcl_ack_queue.get(), timeout=BLOCK_SEND_TIMEOUT)
             except asyncio.TimeoutError:
                 log.warning("ZCL response timeout for block_id=%d", block_id)
                 if prefetch_task:
@@ -496,12 +503,12 @@ class LittlePrinterBridge:
                 block_id = _next_block_id(block_id)
                 continue
 
-            if self._zcl_response_code != 0x00:
-                log.warning("Printer error 0x%02x for block_id=%d", self._zcl_response_code, block_id)
+            if return_code != 0x00:
+                log.warning("Printer error 0x%02x for block_id=%d", return_code, block_id)
                 if prefetch_task:
                     prefetch_task.cancel()
                     prefetch_task = None
-                raise RuntimeError(f"Block {block_id} rejected by printer: 0x{self._zcl_response_code:02x}")
+                raise RuntimeError(f"Block {block_id} rejected by printer: 0x{return_code:02x}")
 
             block_id = _next_block_id(block_id)
 
@@ -516,18 +523,21 @@ class LittlePrinterBridge:
 
     async def _send_block(self, short_addr: int, block_id: int, data: bytes, use_v14: bool) -> bool:
         """Send one block (fragments + ZCL ACK wait). Used for sequential retries."""
+        # Drop late ACKs from the prior (timed-out) attempt before re-sending, so
+        # they aren't mistaken for this attempt's ACK.
+        while not self._zcl_ack_queue.empty():
+            self._zcl_ack_queue.get_nowait()
         if not await self._send_fragments(short_addr, block_id, data, use_v14):
             return False
         self._zcl_seq = (self._zcl_seq + 1) & 0xFF
-        self._zcl_response_event.clear()
-        self._zcl_response_code = -1
         try:
-            await asyncio.wait_for(self._zcl_response_event.wait(), timeout=BLOCK_SEND_TIMEOUT)
+            return_code = await asyncio.wait_for(
+                self._zcl_ack_queue.get(), timeout=BLOCK_SEND_TIMEOUT)
         except asyncio.TimeoutError:
             log.warning("ZCL response timeout for block_id=%d", block_id)
             return False
-        if self._zcl_response_code != 0x00:
-            log.warning("Printer error 0x%02x for block_id=%d", self._zcl_response_code, block_id)
+        if return_code != 0x00:
+            log.warning("Printer error 0x%02x for block_id=%d", return_code, block_id)
             return False
         return True
 
@@ -719,8 +729,7 @@ class LittlePrinterBridge:
             # Printer ACK for the last block. Byte 10 of payload = return code.
             return_code = payload[10] if len(payload) > 10 else 0xFF
             log.info("Block ACK from 0x%04x: return_code=0x%02x", sender, return_code)
-            self._zcl_response_code = return_code
-            self._zcl_response_event.set()
+            self._zcl_ack_queue.put_nowait(return_code)
             return
 
         if event_code == EVENT_HEARTBEAT:
