@@ -95,7 +95,7 @@ Setting up this bridge on a Raspberry Pi doesn't require any programming. Below 
 
    **network-config** - update with your WiFi credentials:
 
-   ```yaml
+```yaml
 network:
   version: 2
   wifis:
@@ -107,11 +107,11 @@ network:
         "YourNetworkName":
           password: "YourPassword"
       optional: false
-   ```
+```
 
    **user-data:**
 
-   ```yaml
+```yaml
 #cloud-config
 
 hostname: little-printer-bridge
